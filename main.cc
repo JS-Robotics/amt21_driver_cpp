@@ -6,8 +6,9 @@
 
 #include <iostream>
 #include <fcntl.h>
-//#include <unistd.h>
-//#include <termios.h>
+#include <unistd.h>
+#include <termios.h>
+#include "amt21_driver.h"
 
 int main() {
     char t = 1;
@@ -21,5 +22,10 @@ int main() {
     test = (test & 0b0011111111111111);  // Remove checksum to get 0x39E4
     std::cout << test << std::endl;  // 14bit encoder value
     std::cout << (test >> 2) << std::endl; // 12bit encoder value
+
+    Amt21Driver driver = Amt21Driver();
+    driver.Open();
+
+    driver.Close();
     return 0;
 }
