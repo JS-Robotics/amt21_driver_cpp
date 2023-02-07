@@ -27,7 +27,7 @@ uint16_t Amt21Driver::GetEncoderPosition() {
   usleep(1000000); // TODO Make some sort of continuous read at higher frequencies
   bytes_read = read(fd_port_, receive_buffer, sizeof(receive_buffer));
 
-  if (bytes_read < 0) {
+  if (bytes_read <= 0) {
     std::cout << "Error reading bytes" << std::endl;
   }
 
