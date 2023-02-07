@@ -7,14 +7,6 @@
 Amt21Driver::Amt21Driver(const std::string &port, bool encoder_12bit, uint32_t baud_rate)
     : port_(port), encoder_12bit_(encoder_12bit), baud_rate_(baud_rate) {
   node_id_ = 0x54; // AMT21 default node id
-  struct termios options{};
-  options.c_cflag = 0010002 | CS8 | CLOCAL | CREAD;
-//  options.c_cflag = B115200 | CS8 | CLOCAL | CREAD;
-  options.c_iflag = IGNPAR;
-  options.c_oflag = 0;
-  options.c_lflag = 0;
-  tcflush(fd_port_, TCIFLUSH);
-  tcsetattr(fd_port_, TCSANOW, &options);
 }
 
 uint16_t Amt21Driver::GetEncoderPosition() {
@@ -24,24 +16,41 @@ uint16_t Amt21Driver::GetEncoderPosition() {
 
   uint8_t receive_buffer[2];
   int64_t bytes_read;
-  usleep(1000000); // TODO Make some sort of continuous read at higher frequencies
-  bytes_read = read(fd_port_, receive_buffer, sizeof(receive_buffer));
+  usleep(30);
+  bool do_read = true;
+  uint16_t counter = 0;
+  while (do_read && counter < 10000) {
+    bytes_read = read(fd_port_, receive_buffer, sizeof(receive_buffer));
+    if (bytes_read >= 1) {
+      do_read = false;
+    }
+    usleep(30);
+    counter++;
+  }
 
   if (bytes_read <= 0) {
     std::cout << "Error reading bytes" << std::endl;
   }
 
-  uint16_t value = ((receive_buffer[1] << 8) | (receive_buffer[0]));
-  value = (value & kCheckBitMask);
+  uint16_t response = ((receive_buffer[1] << 8) | (receive_buffer[0]));
+
+  // TODO check seems to no be working properly
+  if (!ChecksumValidation(response)) {
+    // TODO inform about failure
+    std::cout << "Checksum failed" << std::endl;
+    return 0;
+  }
+
+  response = (response & kCheckBitMask);
 
   if (encoder_12bit_) {
-    value = (value >> 2);
+    response = (response >> 2);
   }
 
   //std::cout << +receive_buffer[1] << ":" << +receive_buffer[0] << std::endl;
-  //std::cout << value << std::endl;
+  //std::cout << response << std::endl;
 
-  return value;
+  return response;
 }
 
 void Amt21Driver::Open() {
@@ -50,6 +59,16 @@ void Amt21Driver::Open() {
   if (fd_port_ == -1) {
     std::cout << "Error opening the serial port" << std::endl;
   }
+
+  // Configure port if opened
+  struct termios options{};
+  options.c_cflag = 0010002 | CS8 | CLOCAL | CREAD;
+//  options.c_cflag = B115200 | CS8 | CLOCAL | CREAD;
+  options.c_iflag = IGNPAR;
+  options.c_oflag = 0;
+  options.c_lflag = 0;
+  tcflush(fd_port_, TCIFLUSH);
+  tcsetattr(fd_port_, TCSANOW, &options);
 
 }
 
@@ -77,36 +96,35 @@ float Amt21Driver::GetEncoderAngle() {
   }
 }
 bool Amt21Driver::ChecksumValidation(uint16_t &checksum) {
-
-  std::cout << checksum << std::endl;
   uint8_t k1 = (checksum >> 15); // Is going to be 0
   uint8_t k0 = (checksum >> 14); // Is going to be 1
 //    std::cout << "k1: " << +k1 << std::endl;
 //    std::cout << "k0: " << +k0 << std::endl;
-  uint8_t odd = !(checksum >> 13 & 0b00000001) ^
-      (checksum >> 11 & 0b00000001) ^
-      (checksum >> 9 & 0b00000001) ^
-      (checksum >> 7 & 0b00000001) ^
-      (checksum >> 5 & 0b00000001) ^
-      (checksum >> 3 & 0b00000001) ^
-      (checksum >> 1 & 0b00000001);
+  uint8_t odd = !(((checksum >> 13) & 0b00000001) ^
+      ((checksum >> 11) & 0b00000001) ^
+      ((checksum >> 9) & 0b00000001) ^
+      ((checksum >> 7) & 0b00000001) ^
+      ((checksum >> 5) & 0b00000001) ^
+      ((checksum >> 3) & 0b00000001) ^
+      ((checksum >> 1) & 0b00000001));
 
   if (k1 != odd) {
+    std::cout << "Failed odd checksum" << std::endl;
     return false;
   }
-
 //  std::cout << "Odd: " << +odd << std::endl;  // Is going to be 0
 
-  uint8_t even = !(checksum >> 12 & 0b00000001) ^
-      (checksum >> 10 & 0b00000001) ^
-      (checksum >> 8 & 0b00000001) ^
-      (checksum >> 6 & 0b00000001) ^
-      (checksum >> 4 & 0b00000001) ^
-      (checksum >> 2 & 0b00000001) ^
-      (checksum & 0b00000001);
+  uint8_t even = !(((checksum >> 12) & 0b00000001) ^
+      ((checksum >> 10) & 0b00000001) ^
+      ((checksum >> 8) & 0b00000001) ^
+      ((checksum >> 6) & 0b00000001) ^
+      ((checksum >> 4) & 0b00000001) ^
+      ((checksum >> 2) & 0b00000001) ^
+      (checksum >> 0 & 0b00000001));  // Checksum fails if the value is not right-shifted 0 times. WHY?
 //  std::cout << "Even: " << +even << std::endl;  // Is going to be 1
 
   if (k0 != even) {
+    std::cout << "Failed even checksum" << std::endl;
     return false;
   }
 

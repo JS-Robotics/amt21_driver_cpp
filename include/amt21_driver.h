@@ -63,6 +63,7 @@ class Amt21Driver {
   static constexpr uint16_t kCheckBitMask = 0b0011111111111111;
   static constexpr uint16_t k14BitMaxValue = 16382; // 0-16383 (16382)
   static constexpr uint16_t k12BitMaxValue = 4095; // 0-4095 (4096)
+  static constexpr uint8_t kMinimumDebounceTime = 11; // μs
 
   bool ChecksumValidation(uint16_t &checksum);
 

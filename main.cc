@@ -58,8 +58,8 @@ int main() {
 
   Amt21Driver driver = Amt21Driver("/dev/ttyUSB0", false, 120500);
   driver.Open();
-//  encoder_value = driver.GetEncoderPosition();
-//  std::cout << "Encoder Position: " << encoder_value << std::endl;
+  encoder_value = driver.GetEncoderPosition();
+  std::cout << "Encoder Position: " << encoder_value << std::endl;
   angle = driver.GetEncoderAngle();
   std::cout << "Angle: " << angle << std::endl;
   driver.Close();
