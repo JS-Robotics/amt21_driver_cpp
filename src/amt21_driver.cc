@@ -36,9 +36,9 @@ uint16_t Amt21Driver::GetEncoderPosition() {
 
   // TODO check seems to no be working properly
   if (!ChecksumValidation(response)) {
-    // TODO inform about failure
+//    // TODO inform about failure
     std::cout << "Checksum failed" << std::endl;
-    return 0;
+//    return 0;
   }
 
   response = (response & kCheckBitMask);
@@ -120,7 +120,7 @@ bool Amt21Driver::ChecksumValidation(uint16_t &checksum) {
       ((checksum >> 6) & 0b00000001) ^
       ((checksum >> 4) & 0b00000001) ^
       ((checksum >> 2) & 0b00000001) ^
-      (checksum >> 0 & 0b00000001));  // Checksum fails if the value is not right-shifted 0 times. WHY?
+      ((checksum) & 0b00000001));  // Checksum fails if the value is not right-shifted 0 times.
 //  std::cout << "Even: " << +even << std::endl;  // Is going to be 1
 
   if (k0 != even) {

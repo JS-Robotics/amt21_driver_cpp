@@ -60,8 +60,15 @@ int main() {
   driver.Open();
   encoder_value = driver.GetEncoderPosition();
   std::cout << "Encoder Position: " << encoder_value << std::endl;
-  angle = driver.GetEncoderAngle();
-  std::cout << "Angle: " << angle << std::endl;
+  int counter = 0;
+  while(counter < 100){
+    angle = driver.GetEncoderAngle();
+    std::cout << "Angle: " << angle << std::endl;
+    counter ++;
+  }
+
+//  angle = driver.GetEncoderAngle();
+//  std::cout << "Angle: " << angle << std::endl;
   driver.Close();
 
   return 0;
