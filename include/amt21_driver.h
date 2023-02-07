@@ -18,8 +18,8 @@ enum class AMT21BaudRate{
 };
 
 enum class AMT21Resolution{
-  k12Bit = true,
-  k14Bit = false
+  k12Bit = 12,
+  k14Bit = 14
 };
 
 class Amt21Driver {
@@ -108,7 +108,7 @@ class Amt21Driver {
   bool checksum_failed_;
   uint8_t node_id_;
   int fd_port_;
-  AMT21Resolution encoder_12bit_;
+  bool encoder_12bit_;
   AMT21BaudRate baud_rate_;
   std::string port_;
 };

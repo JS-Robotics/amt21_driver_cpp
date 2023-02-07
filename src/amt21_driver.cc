@@ -5,7 +5,12 @@
 #include "amt21_driver.h"
 
 Amt21Driver::Amt21Driver(const std::string &port, AMT21Resolution encoder_12bit, AMT21BaudRate baud_rate)
-    : port_(port), encoder_12bit_(encoder_12bit), baud_rate_(baud_rate) {
+    : port_(port), baud_rate_(baud_rate) {
+  if(encoder_12bit == AMT21Resolution::k12Bit){  // https://stackoverflow.com/questions/24297992/is-it-possible-to-make-a-scoped-enumeration-enum-class-contextually-converti  --- value of type enum is not contexaullty convertible to bool  TODO find better solution
+    encoder_12bit_ = true;
+  } else{
+    encoder_12bit_ = false;
+  }
   node_id_ = 0x54; // AMT21 default node id
 }
 
@@ -46,7 +51,7 @@ uint16_t Amt21Driver::GetEncoderPosition() {
 
   response = (response & kCheckBitMask);
 
-  if (encoder_12bit_  == AMT21Resolution::k12Bit) {  // https://stackoverflow.com/questions/24297992/is-it-possible-to-make-a-scoped-enumeration-enum-class-contextually-converti  --- value of type enum is not contexaullty convertible to bool  TODO find better solution
+  if (encoder_12bit_) {
     response = (response >> 2);
   }
 
