@@ -13,6 +13,7 @@
 class Amt21Driver {
  public:
   Amt21Driver(const std::string &port, bool encoder_12bit, uint32_t baud_rate);
+
   ~Amt21Driver() = default;
 
   /*! \brief Opens the constructor specified USB port */
@@ -30,11 +31,27 @@ class Amt21Driver {
    */
   uint16_t GetEncoderPosition();
 
-  /*! \breif Get the encoder shaft angle in degrees
+  /*! \breif Get the encoder shaft angle in radians
    *
-   * @return float (Encoder angle in deg) //TODO convert to rad instead
+   * @return float (Encoder angle in rad)
    */
   float GetEncoderAngle();
+
+  /*! \breif Get the encoder shaft angle in degrees
+   *
+   * @return float (Encoder angle in deg)
+   */
+  float GetEncoderAngleDeg();
+
+  /*! \brief Validate if the checksum failed on read position request
+   *
+   * If the checksum fails it means that the read position response data from the encoder is not valid.
+   * In order to check if the current read response after getting the response data is valid.
+   * This function serves this purpose.
+   *
+   * @return True if the checksum failed. False if the read position response data was received without errors.
+   */
+  bool ChecksumFailed();
 
   /*! \breif Set the node ID to be utilized
    *
@@ -50,7 +67,7 @@ class Amt21Driver {
    * 18 38 58 78 98 B8 D8 F8
    * 1C 3C 5C 7C 9C BC DC FC
    *
-   * @param node_id
+   * @param node_id - The node ID on the RS485 bus to request different responses from
    */
   [[maybe_unused]] void SetNodeId(uint8_t node_id);
 
@@ -59,14 +76,24 @@ class Amt21Driver {
    * @return uint8_t (node ID)
    */
   [[maybe_unused]] uint8_t GetNodeId();
+
  private:
+
+  /*! \brief Perform checksum validation of the returned read response.
+  *
+  * @param checksum
+  * @return False if checksum validation fails, and True if it passes.
+  */
+  bool ChecksumValidation(uint16_t &checksum);
+
+  static constexpr float kPi = 3.14159265358979323846;
   static constexpr uint16_t kCheckBitMask = 0b0011111111111111;
   static constexpr uint16_t k14BitMaxValue = 16382; // 0-16383 (16382)
   static constexpr uint16_t k12BitMaxValue = 4095; // 0-4095 (4096)
   static constexpr uint8_t kMinimumDebounceTime = 11; // μs
 
-  bool ChecksumValidation(uint16_t &checksum);
 
+  bool checksum_failed_;
   uint8_t node_id_;
   int fd_port_;
   bool encoder_12bit_;

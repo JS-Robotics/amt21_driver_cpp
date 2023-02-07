@@ -41,7 +41,7 @@ int main() {
       if (bytes_read >= 1 || counter >= 50000) {
         std::cout << "Bytes read: " << bytes_read << std::endl;
         int value = ((buffer[1] << 8) | (buffer[0]));
-        value = (value & 0x3FFF);
+        value = (value & 0b0011111111111111);
 //        value = (value >> 2);
 //        std::cout << +buffer[0] << ":" << +buffer[1] << std::endl;
 //        std::cout << value << std::endl;

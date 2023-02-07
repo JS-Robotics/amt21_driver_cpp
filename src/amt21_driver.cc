@@ -10,6 +10,8 @@ Amt21Driver::Amt21Driver(const std::string &port, bool encoder_12bit, uint32_t b
 }
 
 uint16_t Amt21Driver::GetEncoderPosition() {
+  checksum_failed_ = false;
+
   uint8_t request_package[] = {node_id_};
   int32_t reqeust_package_size = sizeof(request_package) / sizeof(request_package[0]);
   int64_t bytes_written = write(fd_port_, request_package, reqeust_package_size);
@@ -38,6 +40,7 @@ uint16_t Amt21Driver::GetEncoderPosition() {
   if (!ChecksumValidation(response)) {
 //    // TODO inform about failure
     std::cout << "Checksum failed" << std::endl;
+    checksum_failed_ = true;
 //    return 0;
   }
 
@@ -46,9 +49,6 @@ uint16_t Amt21Driver::GetEncoderPosition() {
   if (encoder_12bit_) {
     response = (response >> 2);
   }
-
-  //std::cout << +receive_buffer[1] << ":" << +receive_buffer[0] << std::endl;
-  //std::cout << response << std::endl;
 
   return response;
 }
@@ -90,16 +90,25 @@ void Amt21Driver::Close() {
 float Amt21Driver::GetEncoderAngle() {
   uint16_t encoder_position = GetEncoderPosition();
   if (!encoder_12bit_) {
+    return static_cast<float>(encoder_position) * (2.f*kPi) / static_cast<float>((k14BitMaxValue));
+  } else {
+    return static_cast<float>(encoder_position) * (2.f*kPi) / static_cast<float>((k12BitMaxValue));
+  }
+}
+
+float Amt21Driver::GetEncoderAngleDeg() {
+  uint16_t encoder_position = GetEncoderPosition();
+  if (!encoder_12bit_) {
     return static_cast<float>(encoder_position) * (360.f) / static_cast<float>((k14BitMaxValue));
   } else {
     return static_cast<float>(encoder_position) * (360.f) / static_cast<float>((k12BitMaxValue));
   }
 }
+
 bool Amt21Driver::ChecksumValidation(uint16_t &checksum) {
-  uint8_t k1 = (checksum >> 15); // Is going to be 0
-  uint8_t k0 = (checksum >> 14); // Is going to be 1
-//    std::cout << "k1: " << +k1 << std::endl;
-//    std::cout << "k0: " << +k0 << std::endl;
+  uint8_t k1 = (checksum >> 15);
+  uint8_t k0 = (checksum >> 14);
+
   uint8_t odd = !(((checksum >> 13) & 0b00000001) ^
       ((checksum >> 11) & 0b00000001) ^
       ((checksum >> 9) & 0b00000001) ^
@@ -112,7 +121,6 @@ bool Amt21Driver::ChecksumValidation(uint16_t &checksum) {
     std::cout << "Failed odd checksum" << std::endl;
     return false;
   }
-//  std::cout << "Odd: " << +odd << std::endl;  // Is going to be 0
 
   uint8_t even = !(((checksum >> 12) & 0b00000001) ^
       ((checksum >> 10) & 0b00000001) ^
@@ -120,8 +128,7 @@ bool Amt21Driver::ChecksumValidation(uint16_t &checksum) {
       ((checksum >> 6) & 0b00000001) ^
       ((checksum >> 4) & 0b00000001) ^
       ((checksum >> 2) & 0b00000001) ^
-      ((checksum) & 0b00000001));  // Checksum fails if the value is not right-shifted 0 times.
-//  std::cout << "Even: " << +even << std::endl;  // Is going to be 1
+      ((checksum) & 0b00000001));
 
   if (k0 != even) {
     std::cout << "Failed even checksum" << std::endl;
@@ -131,3 +138,6 @@ bool Amt21Driver::ChecksumValidation(uint16_t &checksum) {
   return true;
 }
 
+bool Amt21Driver::ChecksumFailed() {
+  return checksum_failed_;
+}
