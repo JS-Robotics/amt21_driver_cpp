@@ -6,10 +6,10 @@
 
 int main() {
   std::string usb_port = "/dev/ttyUSB0";  // The port the USB to RS485 adapter is connected to
-  bool encoder_12bit = false;  // Set true if encoder has 12 bit resolution
-  uint32_t baud_rate = 115200;
+  AMT21BaudRate baud_rate = AMT21BaudRate::k115200;
+  AMT21Resolution encoder_resolution = AMT21Resolution::k14Bit;
 
-  Amt21Driver driver = Amt21Driver(usb_port, encoder_12bit, baud_rate);
+  Amt21Driver driver = Amt21Driver(usb_port, encoder_resolution, baud_rate);
 
   // Open the USB port connection
   driver.Open();

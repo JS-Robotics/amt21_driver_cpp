@@ -10,9 +10,21 @@
 #include <unistd.h>
 #include <termios.h>
 
+enum class AMT21BaudRate{
+  k115200 = 12,
+  k38400 = 123123,
+  k19200 = 3214,
+  k9600 = 12315
+};
+
+enum class AMT21Resolution{
+  k12Bit = true,
+  k14Bit = false
+};
+
 class Amt21Driver {
  public:
-  Amt21Driver(const std::string &port, bool encoder_12bit, uint32_t baud_rate);
+  Amt21Driver(const std::string &port, AMT21Resolution encoder_12bit, AMT21BaudRate baud_rate);
 
   ~Amt21Driver() = default;
 
@@ -96,9 +108,10 @@ class Amt21Driver {
   bool checksum_failed_;
   uint8_t node_id_;
   int fd_port_;
-  bool encoder_12bit_;
-  uint32_t baud_rate_;
+  AMT21Resolution encoder_12bit_;
+  AMT21BaudRate baud_rate_;
   std::string port_;
 };
+
 
 #endif //AMT21_DRIVER_CPP_AMT21_DRIVER_H
