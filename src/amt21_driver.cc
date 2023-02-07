@@ -24,7 +24,7 @@ uint16_t Amt21Driver::GetEncoderPosition() {
 
   uint8_t receive_buffer[2];
   int64_t bytes_read;
-  usleep(100000); // TODO Make some sort of continuous read at higher frequencies
+  usleep(1000000); // TODO Make some sort of continuous read at higher frequencies
   bytes_read = read(fd_port_, receive_buffer, sizeof(receive_buffer));
 
   if (bytes_read < 0) {
@@ -34,7 +34,7 @@ uint16_t Amt21Driver::GetEncoderPosition() {
   uint16_t value = ((receive_buffer[1] << 8) | (receive_buffer[0]));
   value = (value & kCheckBitMask);
 
-  if(encoder_12bit_){
+  if (encoder_12bit_) {
     value = (value >> 2);
   }
 
@@ -67,13 +67,49 @@ void Amt21Driver::Close() {
 [[maybe_unused]] uint8_t Amt21Driver::GetNodeId() {
   return node_id_;
 }
+
 float Amt21Driver::GetEncoderAngle() {
   uint16_t encoder_position = GetEncoderPosition();
-  if(!encoder_12bit_){
-    return static_cast<float>(encoder_position)*(360.f)/static_cast<float>((k14BitMaxValue));
+  if (!encoder_12bit_) {
+    return static_cast<float>(encoder_position) * (360.f) / static_cast<float>((k14BitMaxValue));
+  } else {
+    return static_cast<float>(encoder_position) * (360.f) / static_cast<float>((k12BitMaxValue));
   }
-  else{
-    return static_cast<float>(encoder_position)*(360.f)/static_cast<float>((k12BitMaxValue));
+}
+bool Amt21Driver::ChecksumValidation(uint16_t &checksum) {
+
+  std::cout << checksum << std::endl;
+  uint8_t k1 = (checksum >> 15); // Is going to be 0
+  uint8_t k0 = (checksum >> 14); // Is going to be 1
+//    std::cout << "k1: " << +k1 << std::endl;
+//    std::cout << "k0: " << +k0 << std::endl;
+  uint8_t odd = !(checksum >> 13 & 0b00000001) ^
+      (checksum >> 11 & 0b00000001) ^
+      (checksum >> 9 & 0b00000001) ^
+      (checksum >> 7 & 0b00000001) ^
+      (checksum >> 5 & 0b00000001) ^
+      (checksum >> 3 & 0b00000001) ^
+      (checksum >> 1 & 0b00000001);
+
+  if (k1 != odd) {
+    return false;
   }
+
+//  std::cout << "Odd: " << +odd << std::endl;  // Is going to be 0
+
+  uint8_t even = !(checksum >> 12 & 0b00000001) ^
+      (checksum >> 10 & 0b00000001) ^
+      (checksum >> 8 & 0b00000001) ^
+      (checksum >> 6 & 0b00000001) ^
+      (checksum >> 4 & 0b00000001) ^
+      (checksum >> 2 & 0b00000001) ^
+      (checksum & 0b00000001);
+//  std::cout << "Even: " << +even << std::endl;  // Is going to be 1
+
+  if (k0 != even) {
+    return false;
+  }
+
+  return true;
 }
 
