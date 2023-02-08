@@ -23,7 +23,7 @@ uint16_t Amt21Driver::GetEncoderPosition() {
 
   uint8_t receive_buffer[2];
   int64_t bytes_read;
-  usleep(30);
+  usleep(kMinimumDebounceTime);
   bool do_read = true;
   uint16_t counter = 0;
   while (do_read && counter < 10000) {
@@ -31,7 +31,7 @@ uint16_t Amt21Driver::GetEncoderPosition() {
     if (bytes_read >= 1) {
       do_read = false;
     }
-    usleep(30);
+    usleep(kMinimumDebounceTime);
     counter++;
   }
 
@@ -112,7 +112,7 @@ float Amt21Driver::GetEncoderAngleDeg() {
 
 bool Amt21Driver::ChecksumValidation(uint16_t &checksum) {
   uint8_t k1 = (checksum >> 15);
-  uint8_t k0 = (checksum >> 14);
+  uint8_t k0 = (checksum >> 14 & 0b00000001);
 
   uint8_t odd = !(((checksum >> 13) & 0b00000001) ^
       ((checksum >> 11) & 0b00000001) ^
