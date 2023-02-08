@@ -18,6 +18,8 @@ int main() {
   }
 
   struct termios options{};
+  //  options.c_cflag = 0010002 | CS8 | CLOCAL | CREAD;
+//  options.c_cflag = B115200 | CS8 | CLOCAL | CREAD;
   options.c_cflag = B115200 | CS8 | CLOCAL | CREAD;
   options.c_iflag = IGNPAR;
   options.c_oflag = 0;

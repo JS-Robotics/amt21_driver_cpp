@@ -11,10 +11,11 @@
 #include <termios.h>
 
 enum class AMT21BaudRate{
-  k115200 = 12,
-  k38400 = 123123,
-  k19200 = 3214,
-  k9600 = 12315
+  // k9600 = 9600    // Not supported by terminos?
+  //k19200 = 19200,  // Not supported by terminos?
+  //k38400 = 38400,  // Not supported by terminos?
+  k115200 = B115200,
+  k2000000 = B2000000  //TODO 2mbs encoder has to be tested
 };
 
 enum class AMT21Resolution{
@@ -22,14 +23,19 @@ enum class AMT21Resolution{
   k14Bit = 14
 };
 
+enum class AMT21TurnType{
+  kSingleTurn = 5210,
+  kMultiTurn = 5211
+};
+
 class Amt21Driver {
  public:
-  Amt21Driver(const std::string &port, AMT21Resolution encoder_12bit, AMT21BaudRate baud_rate);
+  Amt21Driver(const std::string &port, AMT21Resolution encoder_12bit, AMT21BaudRate baud_rate, AMT21TurnType turn_type);
 
-  ~Amt21Driver() = default;
+  ~Amt21Driver();
 
   /*! \brief Opens the constructor specified USB port */
-  void Open();
+  bool Open();
 
   /*! \brief Closes the open USB port */
   void Close();
@@ -55,6 +61,12 @@ class Amt21Driver {
    */
   float GetEncoderAngleDeg();
 
+  int32_t GetTurns();
+
+  bool SetZeroPosition();
+
+  bool ResetEncoder();
+
   /*! \brief Validate if the checksum failed on read position request
    *
    * If the checksum fails it means that the read position response data from the encoder is not valid.
@@ -63,7 +75,7 @@ class Amt21Driver {
    *
    * @return True if the checksum failed. False if the read position response data was received without errors.
    */
-  bool ChecksumFailed();
+  bool ChecksumFailed() const;
 
   /*! \breif Set the node ID to be utilized
    *
@@ -87,7 +99,7 @@ class Amt21Driver {
    *
    * @return uint8_t (node ID)
    */
-  [[maybe_unused]] uint8_t GetNodeId();
+  [[maybe_unused]] uint8_t GetNodeId() const;
 
  private:
 
@@ -108,8 +120,16 @@ class Amt21Driver {
   uint8_t node_id_;
   int fd_port_;
   bool encoder_12bit_;
+  bool encoder_single_turn_;
   AMT21BaudRate baud_rate_;
   std::string port_;
+  bool port_open_;
+
+  uint8_t read_position_request;
+  uint8_t extended_command;
+  uint8_t read_turns_request; // Multi-turn encoders only
+  static constexpr uint8_t set_zero_position_request = 0x5E;  // Single turn encoders only
+  static constexpr uint8_t reset_encoder_request = 0x75; // Multi-turn encoders only
 };
 
 

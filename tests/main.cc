@@ -8,16 +8,22 @@
 int main() {
   uint16_t encoder_value;
   float angle;
+  Amt21Driver driver = Amt21Driver("/dev/ttyUSB0",
+                                   AMT21Resolution::k14Bit,
+                                   AMT21BaudRate::k115200,
+                                   AMT21TurnType::kSingleTurn);
 
-  Amt21Driver driver = Amt21Driver("/dev/ttyUSB0", AMT21Resolution::k14Bit, AMT21BaudRate::k115200);
   driver.Open();
   encoder_value = driver.GetEncoderPosition();
   std::cout << "Encoder Position: " << encoder_value << std::endl;
+//  driver.SetZeroPosition();
+//  encoder_value = driver.GetEncoderPosition();
+//  std::cout << "Encoder Position: " << encoder_value << std::endl;
   int counter = 0;
-  while(counter < 100){
-    angle = driver.GetEncoderAngle();
+  while (counter < 100) {
+    angle = driver.GetEncoderPosition();
     std::cout << "Angle: " << angle << std::endl;
-    counter ++;
+    counter++;
   }
 
 //  angle = driver.GetEncoderAngle();

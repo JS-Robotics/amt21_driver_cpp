@@ -8,8 +8,9 @@ int main() {
   std::string usb_port = "/dev/ttyUSB0";  // The port the USB to RS485 adapter is connected to
   AMT21BaudRate baud_rate = AMT21BaudRate::k115200;
   AMT21Resolution encoder_resolution = AMT21Resolution::k14Bit;
+  AMT21TurnType turn_type = AMT21TurnType::kSingleTurn;
 
-  Amt21Driver driver = Amt21Driver(usb_port, encoder_resolution, baud_rate);
+  Amt21Driver driver = Amt21Driver("/dev/ttyUSB0", encoder_resolution, baud_rate, turn_type);
 
   // Open the USB port connection
   driver.Open();
