@@ -9,7 +9,7 @@ int main() {
   uint16_t encoder_value;
   float angle;
 
-  Amt21Driver driver = Amt21Driver("/dev/ttyUSB0", false, AMT21BaudRate::k115200);
+  Amt21Driver driver = Amt21Driver("/dev/ttyUSB0", AMT21Resolution::k14Bit, AMT21BaudRate::k115200);
   driver.Open();
   encoder_value = driver.GetEncoderPosition();
   std::cout << "Encoder Position: " << encoder_value << std::endl;
