@@ -12,8 +12,7 @@ Amt21Driver::Amt21Driver(const std::string &port,
 
   port_open_ = false;
 
-  if (encoder_12bit
-      == AMT21Resolution::k12Bit) {  // https://stackoverflow.com/questions/24297992/is-it-possible-to-make-a-scoped-enumeration-enum-class-contextually-converti  --- value of type enum is not contexaullty convertible to bool  TODO find better solution
+  if (encoder_12bit == AMT21Resolution::k12Bit) {
     encoder_12bit_ = true;
   } else {
     encoder_12bit_ = false;
@@ -25,10 +24,10 @@ Amt21Driver::Amt21Driver(const std::string &port,
     encoder_single_turn_ = false;
   }
 
-  node_id_ = 0x54; // AMT21 default node id
-  read_position_request = node_id_;
-  extended_command = node_id_ + 0x02;
-  read_turns_request = node_id_ + 0x01;
+  node_id_ = 0x54;                       // AMT21 default node id
+  read_position_request = node_id_;      // The read position command is the node_id
+  extended_command = node_id_ + 0x02;    // Extended command is node_id + 0x02
+  read_turns_request = node_id_ + 0x01;  // Read turn command is node_id + 0x01
 }
 
 Amt21Driver::~Amt21Driver() {
@@ -59,8 +58,9 @@ uint16_t Amt21Driver::GetEncoderPosition() {
     counter++;
   }
 
+  encoder_error_ = EncoderErrorCodes::kNoError;
   if (bytes_read <= 0) {
-    std::cout << "Error reading bytes" << std::endl;
+    encoder_error_ = EncoderErrorCodes::kErrorReadingBytes;
   }
 
   uint16_t response = ((receive_buffer[1] << 8) | (receive_buffer[0]));
@@ -80,9 +80,8 @@ uint16_t Amt21Driver::GetEncoderPosition() {
 
 bool Amt21Driver::Open() {
   fd_port_ = open(port_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
-  std::cout << "Opened fd_port_: " << fd_port_ << std::endl;
   if (fd_port_ == -1) {
-    std::cout << "Error opening the serial port" << std::endl;
+    encoder_error_ = EncoderErrorCodes::kErrorOpeningSerialPort;
     return false;
   }
 
@@ -95,14 +94,16 @@ bool Amt21Driver::Open() {
   options.c_lflag = 0;
   tcflush(fd_port_, TCIFLUSH);
   tcsetattr(fd_port_, TCSANOW, &options);
+
+  encoder_error_ = EncoderErrorCodes::kNoError;
   return true;
 }
 
 void Amt21Driver::Close() {
   if (fd_port_) {
     close(fd_port_);
-    std::cout << "Closed fd_port: " << fd_port_ << std::endl;
   }
+  encoder_error_ = EncoderErrorCodes::kNoError;
   port_open_ = false;
 }
 
@@ -138,13 +139,13 @@ float Amt21Driver::GetEncoderAngleDeg() {
 
 bool Amt21Driver::SetZeroPosition() {
   if (!encoder_single_turn_) {
-    std::cout << "Not possible to set zero position when encoder turn type is set to multi-turn" << std::endl;
+    encoder_error_ = EncoderErrorCodes::kSetZeroNotAvailable;
     return false;
   }
   uint8_t request_package[] = {extended_command, set_zero_position_request};
   int32_t reqeust_package_size = sizeof(request_package) / sizeof(request_package[0]);
   int64_t bytes_written = write(fd_port_, request_package, reqeust_package_size);
-  usleep(10000000);
+  usleep(kResetSleepTime);
   return true;
 }
 
@@ -152,13 +153,13 @@ bool Amt21Driver::ResetEncoder() {
   uint8_t request_package[] = {extended_command,};
   int32_t reqeust_package_size = sizeof(request_package) / sizeof(request_package[0]);
   int64_t bytes_written = write(fd_port_, request_package, reqeust_package_size);
-  usleep(10000000);
+  usleep(kResetSleepTime);
   return true;
 }
 
 int32_t Amt21Driver::GetTurns() {  //TODO has to be tested
   if (encoder_single_turn_) {
-    std::cout << "Not possible to read turns when encoder turn type is set to single-turn" << std::endl;
+    encoder_error_ = EncoderErrorCodes::kGetTurnNotAvailable;
     return 0;
   }
   uint8_t request_package[] = {read_turns_request};
@@ -181,8 +182,9 @@ int32_t Amt21Driver::GetTurns() {  //TODO has to be tested
     counter++;
   }
 
+  encoder_error_ = EncoderErrorCodes::kNoError;
   if (bytes_read <= 0) {
-    std::cout << "Error reading bytes" << std::endl;
+    encoder_error_ = EncoderErrorCodes::kErrorReadingBytes;
   }
 
   uint16_t response = ((receive_buffer[1] << 8) | (receive_buffer[0]));
@@ -213,6 +215,7 @@ bool Amt21Driver::ChecksumValidation(uint16_t &checksum) {
       ((checksum >> 1) & 0b00000001));
 
   if (k1 != odd) {
+    encoder_error_ = EncoderErrorCodes::kOddChecksumFailed;
     return false;
   }
 
@@ -225,11 +228,22 @@ bool Amt21Driver::ChecksumValidation(uint16_t &checksum) {
       ((checksum) & 0b00000001));
 
   if (k0 != even) {
+    encoder_error_ = EncoderErrorCodes::kEvenChecksumFailed;
     return false;
   }
+
+  encoder_error_ = EncoderErrorCodes::kNoError;
   return true;
 }
 
 bool Amt21Driver::ChecksumFailed() const {
   return checksum_failed_;
+}
+
+uint8_t Amt21Driver::GetEncoderError() const {
+  return static_cast<uint8_t>(encoder_error_);
+}
+
+bool Amt21Driver::PortOpen() const {
+  return port_open_;
 }

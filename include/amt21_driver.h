@@ -10,22 +10,33 @@
 #include <unistd.h>
 #include <termios.h>
 
-enum class AMT21BaudRate{
-  // k9600 = 9600    // Not supported by terminos?
-  //k19200 = 19200,  // Not supported by terminos?
-  //k38400 = 38400,  // Not supported by terminos?
+enum class AMT21BaudRate {
+  k9600 = B9600,  // NOT TESTED
+  k19200 = B19200,  // NOT TESTED
+  k38400 = B38400,  // NOT TESTED
   k115200 = B115200,
-  k2000000 = B2000000  //TODO 2mbs encoder has to be tested
+  k2000000 = B2000000
 };
 
-enum class AMT21Resolution{
+enum class AMT21Resolution {
   k12Bit = 12,
   k14Bit = 14
 };
 
-enum class AMT21TurnType{
+enum class AMT21TurnType {
   kSingleTurn = 5210,
   kMultiTurn = 5211
+};
+
+enum class EncoderErrorCodes {
+  kNoError = 0x00, /** No error **/
+  kEvenChecksumFailed = 0x01,  /** The Even parity bit checksum evaluation failed **/
+  kOddChecksumFailed = 0x02,  /** The Odd parity bit checksum evaluation failed **/
+  kErrorReadingBytes = 0x03,  /** Error reading bytes from serial **/
+  kGetTurnNotAvailable = 0x04,  /** Not possible to get number of turns when encoder turn type is set to single-turn **/
+  kSetZeroNotAvailable = 0x05,  /** Not possible to set zero position when encoder turn type is set to multi-turn **/
+  kErrorOpeningSerialPort = 0x06  /** Error Opening the serial port **/
+
 };
 
 class Amt21Driver {
@@ -77,6 +88,10 @@ class Amt21Driver {
    */
   bool ChecksumFailed() const;
 
+  [[nodiscard]] uint8_t GetEncoderError() const;
+
+  bool PortOpen() const;
+
   /*! \breif Set the node ID to be utilized
    *
    * Utilize this function in order to change from the default node id 0x54 to another
@@ -115,6 +130,7 @@ class Amt21Driver {
   static constexpr uint16_t k14BitMaxValue = 16382; // 0-16383 (16382)
   static constexpr uint16_t k12BitMaxValue = 4095; // 0-4095 (4096)
   static constexpr uint8_t kMinimumDebounceTime = 50; // μs
+  static constexpr uint32_t kResetSleepTime = 10000000; // μs (10s)
 
   bool checksum_failed_;
   uint8_t node_id_;
@@ -124,6 +140,7 @@ class Amt21Driver {
   AMT21BaudRate baud_rate_;
   std::string port_;
   bool port_open_;
+  EncoderErrorCodes encoder_error_;
 
   uint8_t read_position_request;
   uint8_t extended_command;
@@ -131,6 +148,5 @@ class Amt21Driver {
   static constexpr uint8_t set_zero_position_request = 0x5E;  // Single turn encoders only
   static constexpr uint8_t reset_encoder_request = 0x75; // Multi-turn encoders only
 };
-
 
 #endif //AMT21_DRIVER_CPP_AMT21_DRIVER_H

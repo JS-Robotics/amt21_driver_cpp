@@ -13,4 +13,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}
 
 
 add_executable(program tests/main.cc)
+add_executable(error_codes tests/error_code_validation.cpp)
+
 target_link_libraries(program amt21_driver)

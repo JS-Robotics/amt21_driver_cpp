@@ -10,7 +10,7 @@ int main() {
   float angle;
   Amt21Driver driver = Amt21Driver("/dev/ttyUSB0",
                                    AMT21Resolution::k14Bit,
-                                   AMT21BaudRate::k115200,
+                                   AMT21BaudRate::k2000000,
                                    AMT21TurnType::kSingleTurn);
 
   driver.Open();
