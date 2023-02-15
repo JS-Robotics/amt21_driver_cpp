@@ -8,8 +8,11 @@ Amt21Driver::Amt21Driver(const std::string &port,
                          AMT21Resolution encoder_12bit,
                          AMT21BaudRate baud_rate,
                          AMT21TurnType turn_type)
-    : port_(port), baud_rate_(baud_rate) {
+    : uart_port_(port), baud_rate_(baud_rate) {
 
+  fd_port_ = 0;
+  checksum_failed_ = false;
+  encoder_error_ = EncoderErrorCodes::kNoError;
   port_open_ = false;
 
   if (encoder_12bit == AMT21Resolution::k12Bit) {
@@ -79,7 +82,7 @@ uint16_t Amt21Driver::GetEncoderPosition() {
 }
 
 bool Amt21Driver::Open() {
-  fd_port_ = open(port_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+  fd_port_ = open(uart_port_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
   if (fd_port_ == -1) {
     encoder_error_ = EncoderErrorCodes::kErrorOpeningSerialPort;
     return false;
@@ -150,7 +153,7 @@ bool Amt21Driver::SetZeroPosition() {
 }
 
 bool Amt21Driver::ResetEncoder() {
-  uint8_t request_package[] = {extended_command,};
+  uint8_t request_package[] = {extended_command, reset_encoder_request};
   int32_t reqeust_package_size = sizeof(request_package) / sizeof(request_package[0]);
   int64_t bytes_written = write(fd_port_, request_package, reqeust_package_size);
   usleep(kResetSleepTime);
