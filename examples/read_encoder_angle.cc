@@ -13,7 +13,11 @@ int main() {
   Amt21Driver driver = Amt21Driver("/dev/ttyUSB0", encoder_resolution, baud_rate, turn_type);
 
   // Open the USB port connection
-  driver.Open();
+  bool opened = driver.Open();
+  if(!opened){
+    std::cout << "No access to usb port. Please give read and write access" << std::endl;
+    return 0;
+  }
 
   // Get the encoder value as the position the capacitive disk is in
   uint16_t encoder_value;

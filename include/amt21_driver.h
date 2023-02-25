@@ -10,6 +10,19 @@
 #include <unistd.h>
 #include <termios.h>
 
+
+/*! \brief Selection list of supported encoder baud rates
+ *
+ * The encoder default to a baud rate of 115200bps.
+ * In order to apply other baud rates, the device has to be configured
+ *
+ * \k9600 9600 baud rate
+ * \k19200 12900 baud rate
+ * \k38400 3840 baud rate
+ * \k115200 115200 baud rate
+ * \k2000000 2000000 baud rate
+ *
+ */
 enum class AMT21BaudRate {
   k9600 = B9600,  // NOT TESTED
   k19200 = B19200,  // NOT TESTED
@@ -18,16 +31,36 @@ enum class AMT21BaudRate {
   k2000000 = B2000000
 };
 
+
+/*! \brief Selection list of encoder resolution
+ *
+ * \k12bit 12 bit resolution encoder
+ * \k14Bit 14 bit resolution encoder
+ */
 enum class AMT21Resolution {
   k12Bit = 12,
   k14Bit = 14
 };
 
+/*! \brief Selection list of encoder turn types
+ * \kSingleTurn For AMT21 encoders that are single-turn
+ * \kMultiTurn For AMT21 encoders that are multi-turn
+ */
 enum class AMT21TurnType {
   kSingleTurn = 5210,
   kMultiTurn = 5211
 };
 
+
+/*! \brief Error code list
+ * \kNoError = 0x00, No error
+ * \kEvenChecksumFailed 0x01,  The Even parity bit checksum evaluation failed
+ * \kOddChecksumFailed 0x02, The Odd parity bit checksum evaluation failed
+ * \kErrorReadingBytes 0x03,  Error reading bytes from serial
+ * \kGetTurnNotAvailable 0x04, Not possible to get number of turns when encoder turn type is set to single-turn
+ * \kSetZeroNotAvailable 0x05, Not possible to set zero position when encoder turn type is set to multi-turn
+ * \kErrorOpeningSerialPort 0x06, Error Opening the serial port
+ */
 enum class EncoderErrorCodes {
   kNoError = 0x00, /** No error **/
   kEvenChecksumFailed = 0x01,  /** The Even parity bit checksum evaluation failed **/
@@ -55,7 +88,7 @@ class Amt21Driver {
    *
    * This function returns the current position of the capacitive disc.
    * The value is from 0-16382 if the encoder has 14bit resolution.
-   * The value is from 0-4095 if the encoder has 12bit resolution
+   * The value is from 0-4095 if the encoder has 12bit resolution.
    * @return uint16_t (0 - encoder resolution)
    */
   uint16_t GetEncoderPosition();
@@ -72,10 +105,24 @@ class Amt21Driver {
    */
   float GetEncoderAngleDeg();
 
+  /*! \brief Get the number of encoder turns
+   *
+   * Multi-turn encodes only
+   *
+   * @return (int32_t) Number of encoder turns
+   */
   int32_t GetTurns();
 
+  /*! \brief Set the current encoder position as zero position. I.e. make current position 0 value
+   *
+   * @return (bool) Returns true if the encoder position was successfully zeroed. Else returns true
+   */
   bool SetZeroPosition();
 
+  /*! \brief Resets the encoder.
+   *
+   * @return True if encoder reset was successful.
+   */
   bool ResetEncoder();
 
   /*! \brief Validate if the checksum failed on read position request
@@ -84,17 +131,27 @@ class Amt21Driver {
    * In order to check if the current read response after getting the response data is valid.
    * This function serves this purpose.
    *
-   * @return True if the checksum failed. False if the read position response data was received without errors.
+   * @return True if the checksum failed. False if the read position response data was received without errors
    */
-  bool ChecksumFailed() const;
+  [[nodiscard]] bool ChecksumFailed() const;
 
+  /*! \brief Get the current encoder error
+   *
+   * See enum class EncoderErrors for error code information.
+   *
+   * @return (uint8_t) Current encoder error
+   */
   [[nodiscard]] uint8_t GetEncoderError() const;
 
-  bool PortOpen() const;
+  /*! \brief Check if the port is currently open or closed
+   *
+   * @return (bool) True if the UART port is open, False if it is closed
+   */
+  [[nodiscard]] bool PortOpen() const;
 
   /*! \breif Set the node ID to be utilized
    *
-   * Utilize this function in order to change from the default node id 0x54 to another
+   * Utilize this function in order to change from the default node id 0x54 to another.
    *
    * Available node addresses are:
    * 00 20 40 60 80 A0 C0 E0
@@ -114,14 +171,14 @@ class Amt21Driver {
    *
    * @return uint8_t (node ID)
    */
-  [[maybe_unused]] uint8_t GetNodeId() const;
+  [[maybe_unused]] [[nodiscard]] uint8_t GetNodeId() const;
 
  private:
 
-  /*! \brief Perform checksum validation of the returned read response.
+  /*! \brief Perform checksum validation of the returned read response
   *
-  * @param checksum
-  * @return False if checksum validation fails, and True if it passes.
+  * @param checksum The return response from the encoder to be checksum validated
+  * @return False if checksum validation fails, and True if it passes
   */
   bool ChecksumValidation(uint16_t &checksum);
 
@@ -138,7 +195,7 @@ class Amt21Driver {
   bool encoder_12bit_;
   bool encoder_single_turn_;
   AMT21BaudRate baud_rate_;
-  std::string port_;
+  std::string uart_port_;
   bool port_open_;
   EncoderErrorCodes encoder_error_;
 
@@ -146,7 +203,7 @@ class Amt21Driver {
   uint8_t extended_command;
   uint8_t read_turns_request; // Multi-turn encoders only
   static constexpr uint8_t set_zero_position_request = 0x5E;  // Single turn encoders only
-  static constexpr uint8_t reset_encoder_request = 0x75; // Multi-turn encoders only
+  static constexpr uint8_t reset_encoder_request = 0x75;
 };
 
 #endif //AMT21_DRIVER_CPP_AMT21_DRIVER_H

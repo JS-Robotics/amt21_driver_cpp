@@ -10,10 +10,15 @@ int main() {
   float angle;
   Amt21Driver driver = Amt21Driver("/dev/ttyUSB0",
                                    AMT21Resolution::k14Bit,
-                                   AMT21BaudRate::k2000000,
+                                   AMT21BaudRate::k115200,
                                    AMT21TurnType::kSingleTurn);
 
-  driver.Open();
+  bool opened = driver.Open();
+  if(!opened){
+    std::cout << "No access to usb port. Please give read and write access" << std::endl;
+    return 0;
+  }
+
   encoder_value = driver.GetEncoderPosition();
   std::cout << "Encoder Position: " << encoder_value << std::endl;
 //  driver.SetZeroPosition();
