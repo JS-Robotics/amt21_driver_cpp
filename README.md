@@ -27,7 +27,7 @@ change will not be persistent through reboot or device connection/reconnection.
 To make it persistent, creat an udev-rule. This will require the vendor and product id of the device.
 Use `lsusb` in order to determine the `<vendorid>` and `<productid>`. 
 
-    echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="<vendorid>", ATTR{idProduct}=="<productid>", MODE="0666"' | sudo tee /etc/udev/rules.d/91-amt-encoder.rules
+    echo 'SUBSYSTEM=="tty", ATTR{idVendor}=="<vendorid>", ATTR{idProduct}=="<productid>", MODE="0666"' | sudo tee /etc/udev/rules.d/99-amt-serial.rules
 Then, in order to reload udev-rules run the following commands, or simply reboot. 
     
     sudo udevadm control --reload-rules && sudo udevadm trigger
@@ -55,7 +55,7 @@ In a terminal window, `lsusb` returns the following.
 From the above information it can be determined that `<vendorid> = 0403` and `<productid> = 6001`.
 Thus, the following udev-rule is applied:
 
-    echo 'SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001" MODE="0666"' | sudo tee /etc/udev/rules.d/99-usb-serial.rules
+    echo 'SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001" MODE="0666"' | sudo tee /etc/udev/rules.d/99-amt-serial.rules
 
 If you share your linux system with other users, or just don't like the
 idea of write permission for everybody, you can replace `MODE:="0666"` with
