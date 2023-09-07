@@ -184,7 +184,7 @@ class Amt21Driver {
 
   static constexpr float kPi = 3.14159265358979323846;
   static constexpr uint16_t kCheckBitMask = 0b0011111111111111;
-  static constexpr uint16_t k14BitMaxValue = 16382; // 0-16383 (16382)
+  static constexpr uint16_t k14BitMaxValue = 16383; // 0-16383 (16384)
   static constexpr uint16_t k12BitMaxValue = 4095; // 0-4095 (4096)
   static constexpr uint8_t kMinimumDebounceTime = 50; // μs
   static constexpr uint32_t kResetSleepTime = 10000000; // μs (10s)
